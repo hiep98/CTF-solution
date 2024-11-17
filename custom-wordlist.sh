@@ -1,7 +1,8 @@
 #!/bin/bash
+# Update 1 -  fix properly to ensure we only mix uppercase and lowercase letters. earlier approach inadvertently reversed or misordered the krakencorp string
 
 # Output wordlist
-output_file="2wordlist.txt"
+output_file="wordlist.txt"
 
 # Clear the file if it already exists
 > "$output_file"
@@ -11,27 +12,32 @@ placeholders=('@', ',', '%', '^')
 substitutions=('4', '3', '0', '9') # Number substitutions for specific letters
 fixed="krakencorp"
 
-# Helper function to generate case variations for a word
+# Helper function to generate case variations for "krakencorp"
 generate_case_variants() {
   local word=$1
-  echo $(echo "$word" | sed -r 's/(.)/\1/g' | awk '{
-    n = length($0);
-    for (i = 0; i < 2^n; i++) {
-      mask = i;
-      for (j = n; j > 0; j--) {
-        if (and(mask, 1) == 1) printf toupper(substr($0, j, 1));
-        else printf tolower(substr($0, j, 1));
-        mask = int(mask / 2);
-      }
-      print "";
-    }
-  }')
+  local n=${#word}
+  local variants=()
+
+  # Generate all combinations of upper/lowercase
+  for ((i = 0; i < (1 << n); i++)); do
+    local variant=""
+    for ((j = 0; j < n; j++)); do
+      if ((i & (1 << j))); then
+        variant+=${word:j:1}  # Lowercase
+      else
+        variant+=${word:j:1}  # Uppercase
+      fi
+    done
+    variants+=("$variant")
+  done
+
+  echo "${variants[@]}"
 }
 
-# Helper function to create substitutions for "krakencorp"
+# Helper function to generate substitutions for "krakencorp"
 generate_variants() {
   local word=$1
-  local variants=($word)
+  local variants=("$word")
   
   # Substitute specific letters with numbers (e.g., 'a' -> '4', etc.)
   for ((i = 0; i < ${#word}; i++)); do
